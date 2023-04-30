@@ -1,4 +1,4 @@
-"""Base example application."""
+"""Base example  application."""
 import socket
 
 import flask
