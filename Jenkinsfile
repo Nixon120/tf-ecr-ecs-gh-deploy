@@ -1,41 +1,46 @@
-def COLOR_MAP = [
-    'SUCCESS': 'good', 
-    'FAILURE': 'danger',
-]
 pipeline {
     agent any
-    
+
     environment {
-        registryCredential = 'ecr:us-east-1:awscreds'
-        appRegistry = '678573427865.dkr.ecr.us-east-1.amazonaws.com/app-registry'
-        awsRegistry = "https://678573427865.dkr.ecr.us-east-1.amazonaws.com"
-        cluster = "ecs-cluster"
-        service = "ecs-service"
+        AWS_REGION = 'us-east-1'
+        ECR_REPOSITORY = 'app-registry'
+        ECS_CLUSTER = 'ecs-cluster'
+        ECS_SERVICE = 'ecs-service'
+        DOCKER_IMAGE_TAG = 'latest' // Modify this as per your requirements
     }
 
     stages {
-        stage('Build App Image') {
+        stage('Build') {
             steps {
                 script {
-                    dockerImage = docker.build( appRegistry + ":$BUILD_NUMBER", "./Dockerfiles/App/")
+                    // Build your application here
+                    sh 'docker build -t $ECR_REPOSITORY:$DOCKER_IMAGE_TAG .'
                 }
             }
         }
-        
-        stage('Upload App Image') {
-          steps{
-            script {
-              docker.withRegistry( awsRegistry, registryCredential ) {
-                dockerImage.push("$BUILD_NUMBER")
-                dockerImage.push('latest')
-              }
-            }
-          }
-        }
-        stage('Deploy to ECS staging') {
+
+        stage('Publish to ECR') {
             steps {
-                withAWS(credentials: 'awscreds', region: 'us-east-1') {
-                    sh 'aws ecs update-service --cluster ${cluster} --service ${service} --force-new-deployment'
+                script {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'your_aws_credentials_id']]) {
+                        sh """
+                            $(aws ecr get-login --no-include-email --region $AWS_REGION)
+                            docker push $ECR_REPOSITORY:$DOCKER_IMAGE_TAG
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to ECS') {
+            steps {
+                script {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'your_aws_credentials_id']]) {
+                        sh """
+                            $(aws ecr get-login --no-include-email --region $AWS_REGION)
+                            aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
+                        """
+                    }
                 }
             }
         }
