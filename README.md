@@ -17,7 +17,7 @@ in the Terraform Registry at [tbobm/ecs][tf-registry-ecs]._
 
 ## Core components
 
-### AWS
+### AWS .
 
 The AWS infrastructure is setup using terraform in the [`./terraform`](./terraform).
 
