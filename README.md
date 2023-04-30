@@ -12,7 +12,7 @@ based on the resources I used in this repository. It is available at
 [github.com/tbobm/terraform-aws-ecs][gh-tf-module] and it is already available
 in the Terraform Registry at [tbobm/ecs][tf-registry-ecs]._
 
-[tf-registry-ecs]: https://registry.terraform.io/modules/tbobm/ecs/aws/latest
+[tf-registry-ecs]: https://registry.terraform.io/modules/tbobm/ecs/aws/latest.
 [gh-tf-module]: https://github.com/tbobm/terraform-aws-ecs
 
 ## Core components
