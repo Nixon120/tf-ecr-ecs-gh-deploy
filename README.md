@@ -7,7 +7,7 @@ automatically update it using Github Action.
 
 Example run is available [here][ci-success].
 .
-_Hey, considering some people forked this project I made a Terraform Module
+_Hey, considering some people forked this project I made a Terraform Module.
 based on the resources I used in this repository. It is available at
 [github.com/tbobm/terraform-aws-ecs][gh-tf-module] and it is already available
 in the Terraform Registry at [tbobm/ecs][tf-registry-ecs]._
