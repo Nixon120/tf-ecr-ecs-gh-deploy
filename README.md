@@ -1,4 +1,4 @@
-# Automated ECS deployments
+# Automated ECS deployments;
 
 [![workflow](https://github.com/tbobm/tf-ecr-ecs-gh-deploy/actions/workflows/workflow.yml/badge.svg)](https://github.com/tbobm/tf-ecr-ecs-gh-deploy/actions/workflows/workflow.yml)
 
