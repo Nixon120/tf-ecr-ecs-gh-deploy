@@ -1,48 +1,47 @@
 pipeline {
-    agent any
-
-    environment {
-        AWS_REGION = 'us-east-1'
-        ECR_REPOSITORY = 'app-registry'
-        ECS_CLUSTER = 'ecs-cluster'
-        ECS_SERVICE = 'ecs-service'
-        DOCKER_IMAGE_TAG = 'latest' // Modify this as per your requirements
-    }
-
-    stages {
-        stage('Build') {
-            steps {
-                script {
-                    // Build your application here
-                    sh 'docker build -t $ECR_REPOSITORY:$DOCKER_IMAGE_TAG .'
-                }
-            }
-        }
-
-        stage('Publish to ECR') {
-            steps {
-                script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_cred']]) {
-                        sh """
-                            $(aws ecr get-login --no-include-email --region $AWS_REGION)
-                            docker push $ECR_REPOSITORY:$DOCKER_IMAGE_TAG
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Deploy to ECS') {
-            steps {
-                script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_cred']]) {
-                        sh """
-                            $(aws ecr get-login --no-include-email --region $AWS_REGION)
-                            aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
-                        """
-                    }
-                }
-            }
-        }
-    }
+ agent any
+ environment {
+ AWS_ACCOUNT_ID="678573427865"
+ AWS_DEFAULT_REGION="us-east-1" 
+ IMAGE_REPO_NAME="app-registry"
+ IMAGE_TAG="latest"
+ REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}"
+ }
+ 
+ stages {
+ 
+ stage('Logging into AWS ECR') {
+ steps {
+ script {
+ sh "aws ecr get-login-password - region ${AWS_DEFAULT_REGION} | docker login - username AWS - password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+ }
+ 
+ }
+ }
+ 
+ stage('Cloning Git') {
+ steps {
+ checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: 'https://github.com/sd031/aws_codebuild_codedeploy_nodeJs_demo.git']]]) 
+ }
+ }
+ 
+ // Building Docker images
+ stage('Building image') {
+ steps{
+ script {
+ dockerImage = docker.build "${IMAGE_REPO_NAME}:${IMAGE_TAG}"
+ }
+ }
+ }
+ 
+ // Uploading Docker images into AWS ECR
+ stage('Pushing to ECR') {
+ steps{ 
+ script {
+ sh "docker tag ${IMAGE_REPO_NAME}:${IMAGE_TAG} ${REPOSITORY_URI}:$IMAGE_TAG"
+ sh "docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}"
+ }
+ }
+ }
+ }
 }
