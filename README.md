@@ -5,7 +5,7 @@
 Create the AWS infrastructure (ECS, ECR, ALB, ...) to deploy a container and
 automatically update it using Github Action.
 
-Example run is available [here][ci-success].
+Example run is available [here][ci-success]..
 .
 _Hey, considering some people forked this project I made a Terraform Module.
 based on the resources I used in this repository. It is available at
