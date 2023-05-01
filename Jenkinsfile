@@ -1,32 +1,28 @@
 pipeline {
     agent any
 
-    environment {
-        AWS_REGION = 'us-east-1'
-        ECR_REPOSITORY = 'app-registry'
-        ECS_CLUSTER = 'ecs-cluster'
-        ECS_SERVICE = 'ecs-service'
-        DOCKER_IMAGE_TAG = 'latest' // Modify this as per your requirements
-    }
-
     stages {
-        stage('Build') {
+        stage('Clone') {
             steps {
-                script {
-                    // Build your application here
-                    sh 'docker build -t $ECR_REPOSITORY:$DOCKER_IMAGE_TAG .'
-                }
+                git 'https://github.com/tbobm/tf-ecr-ecs-gh-deploy.git'
             }
         }
 
-        stage('Publish to ECR') {
+        stage('Build and Push to ECR') {
             steps {
                 script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'your_aws_credentials_id']]) {
-                        sh """
-                            $(aws ecr get-login --no-include-email --region $AWS_REGION)
-                            docker push $ECR_REPOSITORY:$DOCKER_IMAGE_TAG
-                        """
+                    def imageName = 'latest'
+                    def ecrRepositoryUrl = '678573427865.dkr.ecr.us-east-1.amazonaws.com/app-registry'
+                    def awsRegion = 'us-east-1'
+
+                    // Build Docker image
+                    sh "docker build -t ${imageName} ."
+
+                    // Authenticate and push image to ECR
+                    withAWS(region: awsRegion, credentials: 'your-aws-credentials') {
+                        sh "aws ecr get-login-password --region ${awsRegion} | docker login --username AWS --password-stdin ${ecrRepositoryUrl}"
+                        sh "docker tag ${imageName}:latest ${ecrRepositoryUrl}/${imageName}:latest"
+                        sh "docker push ${ecrRepositoryUrl}/${imageName}:latest"
                     }
                 }
             }
@@ -35,17 +31,20 @@ pipeline {
         stage('Deploy to ECS') {
             steps {
                 script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'your_aws_credentials_id']]) {
-                        sh """
-                            $(aws ecr get-login --no-include-email --region $AWS_REGION)
-                            aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
-                        """
-                    }
+                    def awsRegion = 'us-east-1'
+                    def ecsCluster = 'ecs-cluster'
+                    def ecsService = 'ecs-service'
+                    def imageName = 'latest'
+                    def ecrRepositoryUrl = '678573427865.dkr.ecr.us-east-1.amazonaws.com/app-registry'
+                    def taskDefinition = 'your-task-definition'
+
+                    // Update ECS task definition
+                    sh "aws ecs register-task-definition --region ${awsRegion} --family ${taskDefinition} --container-definitions '[{\"name\":\"${imageName}\",\"image\":\"${ecrRepositoryUrl}/${imageName}:latest\"}]'"
+
+                    // Update ECS service to use the new task definition
+                    sh "aws ecs update-service --region ${awsRegion} --cluster ${ecsCluster} --service ${ecsService} --task-definition ${taskDefinition}"
                 }
             }
         }
     }
 }
-
-
-
