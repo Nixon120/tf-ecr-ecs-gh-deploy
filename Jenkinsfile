@@ -22,7 +22,7 @@ pipeline {
         stage('Publish to ECR') {
             steps {
                 script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'your_aws_credentials_id']]) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_cred']]) {
                         sh """
                             $(aws ecr get-login --no-include-email --region $AWS_REGION)
                             docker push $ECR_REPOSITORY:$DOCKER_IMAGE_TAG
@@ -35,7 +35,7 @@ pipeline {
         stage('Deploy to ECS') {
             steps {
                 script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'your_aws_credentials_id']]) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_cred']]) {
                         sh """
                             $(aws ecr get-login --no-include-email --region $AWS_REGION)
                             aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
